@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Comic Book Generator</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#x1f4da;</text></svg>">
+</head>
+<body>
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="login-page">
+        <div class="login-card">
+            <div class="login-logo">
+                <span class="logo-icon">&#x1f4da;</span>
+                <h1>AI Comic Book Generator</h1>
+                <p>Create amazing comics with AI-powered tools</p>
+            </div>
+            <div id="loginError" class="login-error"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Sign In</button>
+            </form>
+            <button id="fillCredsBtn" class="btn btn-fill-creds">&#x26A1; Auto-fill Demo Credentials</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="appLayout" class="app-layout" style="display:none;">
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo-sm">&#x1f4da;</span>
+                <div>
+                    <h2>Comic Generator</h2>
+                    <p>AI-Powered Studio</p>
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebarNav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item active" data-section="dashboard">
+                        <span class="nav-icon">&#x1f3e0;</span>
+                        <span>Dashboard</span>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Content</div>
+                    <div class="nav-item" data-section="comic-stories">
+                        <span class="nav-icon">&#x1f4d6;</span>
+                        <span>Comic Stories</span>
+                        <span class="nav-badge" id="badge-comic-stories">0</span>
+                    </div>
+                    <div class="nav-item" data-section="characters">
+                        <span class="nav-icon">&#x1f9b8;</span>
+                        <span>Characters</span>
+                        <span class="nav-badge" id="badge-characters">0</span>
+                    </div>
+                    <div class="nav-item" data-section="comic-panels">
+                        <span class="nav-icon">&#x1f5bc;</span>
+                        <span>Comic Panels</span>
+                        <span class="nav-badge" id="badge-comic-panels">0</span>
+                    </div>
+                    <div class="nav-item" data-section="art-styles">
+                        <span class="nav-icon">&#x1f3a8;</span>
+                        <span>Art Styles</span>
+                        <span class="nav-badge" id="badge-art-styles">0</span>
+                    </div>
+                    <div class="nav-item" data-section="speech-bubbles">
+                        <span class="nav-icon">&#x1f4ac;</span>
+                        <span>Speech Bubbles</span>
+                        <span class="nav-badge" id="badge-speech-bubbles">0</span>
+                    </div>
+                    <div class="nav-item" data-section="comic-templates">
+                        <span class="nav-icon">&#x1f4cb;</span>
+                        <span>Comic Templates</span>
+                        <span class="nav-badge" id="badge-comic-templates">0</span>
+                    </div>
+                    <div class="nav-item" data-section="comic-series">
+                        <span class="nav-icon">&#x1f4da;</span>
+                        <span>Comic Series</span>
+                        <span class="nav-badge" id="badge-comic-series">0</span>
+                    </div>
+                    <div class="nav-item" data-section="gallery">
+                        <span class="nav-icon">&#x1f5bc;</span>
+                        <span>Gallery</span>
+                        <span class="nav-badge" id="badge-gallery">0</span>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">AI Tools</div>
+                    <div class="nav-item" data-section="ai-stories">
+                        <span class="nav-icon">&#x2728;</span>
+                        <span>AI Story Generator</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-characters">
+                        <span class="nav-icon">&#x1f916;</span>
+                        <span>AI Character Designer</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-dialogues">
+                        <span class="nav-icon">&#x1f4ad;</span>
+                        <span>AI Dialogue Writer</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-art-suggestions">
+                        <span class="nav-icon">&#x1f308;</span>
+                        <span>AI Art Advisor</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-plot-twists">
+                        <span class="nav-icon">&#x1f300;</span>
+                        <span>AI Plot Twists</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-scenes">
+                        <span class="nav-icon">&#x1f304;</span>
+                        <span>AI Scene Builder</span>
+                    </div>
+                    <div class="nav-item" data-section="ai-villains">
+                        <span class="nav-icon">&#x1f608;</span>
+                        <span>AI Villain Creator</span>
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">CC</div>
+                    <div class="user-details">
+                        <div class="name" id="userName">Comic Creator</div>
+                        <div class="email" id="userEmail">admin@comicbook.ai</div>
+                    </div>
+                    <button class="btn-logout" onclick="logout()" title="Logout">&#x23FB;</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Sections rendered by JS -->
+        </main>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closeDetail()"></div>
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-panel-header">
+            <h3 id="detailTitle">Details</h3>
+            <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+        <div class="detail-actions" id="detailActions"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Item</h3>
+                <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
