@@ -201,6 +201,18 @@ CREATE TABLE IF NOT EXISTS ai_villains (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Story Ratings
+CREATE TABLE IF NOT EXISTS story_ratings (
+    id SERIAL PRIMARY KEY,
+    story_id INTEGER NOT NULL REFERENCES comic_stories(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (story_id, user_id)
+);
+
 -- User Gallery
 CREATE TABLE IF NOT EXISTS gallery (
     id SERIAL PRIMARY KEY,

@@ -1,0 +1,104 @@
+{
+  "project": "AIComicBookGenerator",
+  "marker": "// === Batch 01 Gaps & Frontend Mounts ===",
+  "features": [
+    {
+      "slug": "agentic-comic-studio-orchestrating-script-characte",
+      "component": "AgenticComicStudioOrchestratingScriptCharactePage",
+      "label": "Agentic comic studio orchestrating script, character design, panel-layout, and lettering end-to-end",
+      "endpoint": "/api/cf-agentic-comic-studio-orchestrating-script-characte",
+      "kind": "cfs"
+    },
+    {
+      "slug": "rag-over-canonical-character-bibles-maintaining-co",
+      "component": "RagOverCanonicalCharacterBiblesMaintainingCoPage",
+      "label": "RAG over canonical character bibles maintaining consistency across issues",
+      "endpoint": "/api/cf-rag-over-canonical-character-bibles-maintaining-co",
+      "kind": "cfs"
+    },
+    {
+      "slug": "real-time-co-creation-between-writer-and-ai-artist",
+      "component": "RealTimeCoCreationBetweenWriterAndAiArtistPage",
+      "label": "Real-time co-creation between writer and AI artist with live regeneration",
+      "endpoint": "/api/cf-real-time-co-creation-between-writer-and-ai-artist",
+      "kind": "cfs"
+    },
+    {
+      "slug": "white-label-platform-for-indie-comic-studios-and-w",
+      "component": "WhiteLabelPlatformForIndieComicStudiosAndWPage",
+      "label": "White-label platform for indie comic studios and webtoon publishers",
+      "endpoint": "/api/cf-white-label-platform-for-indie-comic-studios-and-w",
+      "kind": "cfs"
+    },
+    {
+      "slug": "no-actual-image-generation-pipeline-only-text-endp",
+      "component": "NoActualImageGenerationPipelineOnlyTextEndpPage",
+      "label": "No actual image generation pipeline (only text endpoints)",
+      "endpoint": "/api/gap-no-actual-image-generation-pipeline-only-text-endp",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-character-consistency-across-panels",
+      "component": "NoAiCharacterConsistencyAcrossPanelsPage",
+      "label": "No AI character-consistency across panels",
+      "endpoint": "/api/gap-no-ai-character-consistency-across-panels",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-lettering-speech-bubble-auto-layout",
+      "component": "NoAiLetteringSpeechBubbleAutoLayoutPage",
+      "label": "No AI lettering / speech-bubble auto-layout",
+      "endpoint": "/api/gap-no-ai-lettering-speech-bubble-auto-layout",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-page-flow-pacing-recommender",
+      "component": "NoAiPageFlowPacingRecommenderPage",
+      "label": "No AI page-flow / pacing recommender",
+      "endpoint": "/api/gap-no-ai-page-flow-pacing-recommender",
+      "kind": "gap"
+    },
+    {
+      "slug": "only-5-backend-routes-and-5-frontend-pages-thin-do",
+      "component": "Only5BackendRoutesAnd5FrontendPagesThinDoPage",
+      "label": "Only 5 backend routes and 5 frontend pages \u2014 thin domain",
+      "endpoint": "/api/gap-only-5-backend-routes-and-5-frontend-pages-thin-do",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-collaboration-writer-artist-workflow",
+      "component": "NoCollaborationWriterArtistWorkflowPage",
+      "label": "No collaboration (writer + artist) workflow",
+      "endpoint": "/api/gap-no-collaboration-writer-artist-workflow",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-export-to-cbz-pdf-epub-or-print-ready-pdf",
+      "component": "NoExportToCbzPdfEpubOrPrintReadyPdfPage",
+      "label": "No export to CBZ/PDF/EPUB or print-ready PDF",
+      "endpoint": "/api/gap-no-export-to-cbz-pdf-epub-or-print-ready-pdf",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-marketplace-publishing-layer",
+      "component": "NoMarketplacePublishingLayerPage",
+      "label": "No marketplace/publishing layer",
+      "endpoint": "/api/gap-no-marketplace-publishing-layer",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-commenting-or-beta-reader-feedback-loop",
+      "component": "NoCommentingOrBetaReaderFeedbackLoopPage",
+      "label": "No commenting or beta-reader feedback loop",
+      "endpoint": "/api/gap-no-commenting-or-beta-reader-feedback-loop",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-notification-system-or-webhook-outbound",
+      "component": "NoNotificationSystemOrWebhookOutboundPage",
+      "label": "No notification system or webhook outbound",
+      "endpoint": "/api/gap-no-notification-system-or-webhook-outbound",
+      "kind": "gap"
+    }
+  ]
+}
