@@ -8,7 +8,7 @@ const router = express.Router();
 const SYSTEM_PROMPT =
   'You are a creative comic book writer and artist director. Generate vivid, engaging content with rich visual descriptions and dynamic storytelling.';
 
-const MODEL = 'anthropic/claude-3-5-sonnet-20241022';
+const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
 async function callOpenRouter(prompt, systemPrompt) {
   if (!process.env.OPENROUTER_API_KEY) {

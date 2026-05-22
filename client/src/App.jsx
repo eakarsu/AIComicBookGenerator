@@ -6,6 +6,12 @@ import CreateStory from './pages/CreateStory.jsx';
 import Login from './pages/Login.jsx';
 import AITools from './pages/AITools.jsx';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+import PanelContinuityPage from './pages/PanelContinuityPage';
+
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 export const AuthContext = createContext(null);
 
@@ -110,6 +116,7 @@ function NavBar() {
           <Link to="/create" style={styles.navLink}>Create Story</Link>
         )}
         <Link to="/ai-tools" style={styles.navLink}>AI Tools</Link>
+        <Link to="/panel-continuity" style={styles.navLink}>Continuity</Link>
         {isLoggedIn ? (
           <>
             <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{user?.email}</span>
@@ -132,6 +139,10 @@ export default function App() {
       <BrowserRouter>
         <NavBar />
         <Routes>
+        <Route path="/insights/timeline" element={<ProtectedRoute><TimelineView /></ProtectedRoute>} />
+        <Route path="/codex/custom-viz" element={<ProtectedRoute><CodexCustomVizFeature /></ProtectedRoute>} />
+        <Route path="/codex/operations" element={<ProtectedRoute><CodexOperationsFeature /></ProtectedRoute>} />
+
           <Route path="/" element={<Home />} />
           <Route path="/stories/:id" element={<StoryDetail />} />
           <Route path="/login" element={<Login />} />
@@ -144,6 +155,7 @@ export default function App() {
             }
           />
           <Route path="/ai-tools" element={<AITools />} />
+          <Route path="/panel-continuity" element={<PanelContinuityPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

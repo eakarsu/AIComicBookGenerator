@@ -23,6 +23,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/stories', storiesRoutes);
 app.use('/api/stories/:id/panels', panelsRoutes);
 app.use('/api', crudRoutes);
+app.use('/api/panel-continuity', require('./routes/panelContinuity'));
 
 // Health check
 app.get('/api/health', (req, res) => {
