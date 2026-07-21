@@ -13,11 +13,12 @@ async function seed() {
     console.log('Schema created successfully');
 
     // Seed user
-    const hashedPassword = await bcrypt.hash(process.env.DEFAULT_PASSWORD || 'Comic2024!', 10);
+    if (!process.env.DEMO_ADMIN_PASSWORD || process.env.DEMO_ADMIN_PASSWORD.length < 12) throw new Error('DEMO_ADMIN_PASSWORD (12+ characters) is required');
+    const hashedPassword = await bcrypt.hash(process.env.DEMO_ADMIN_PASSWORD, 10);
     await client.query(`
       INSERT INTO users (email, password, name) VALUES ($1, $2, $3)
       ON CONFLICT (email) DO UPDATE SET password = $2
-    `, [process.env.DEFAULT_EMAIL || 'admin@comicbook.ai', hashedPassword, 'Comic Creator']);
+    `, [process.env.DEMO_ADMIN_EMAIL || 'admin@comicbook.invalid', hashedPassword, 'Comic Creator']);
     console.log('User seeded');
 
     // Seed Comic Stories (15)
