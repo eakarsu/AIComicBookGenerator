@@ -10,6 +10,8 @@ const SYSTEM_PROMPT =
 
 const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
+router.use(authenticate);
+
 async function callOpenRouter(prompt, systemPrompt) {
   if (!process.env.OPENROUTER_API_KEY) {
     const err = new Error('AI service unavailable: OPENROUTER_API_KEY not configured on server.');
