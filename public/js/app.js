@@ -277,17 +277,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   }
 });
 
-document.getElementById('fillCredsBtn').addEventListener('click', async () => {
-  try {
-    const res = await fetch(`${API}/api/auth/defaults`);
-    const data = await res.json();
-    document.getElementById('loginEmail').value = data.email;
-    document.getElementById('loginPassword').value = data.password;
-    toast('Credentials filled!', 'success');
-  } catch {
-    document.getElementById('loginEmail').value = 'admin@comicbook.ai';
-    document.getElementById('loginPassword').value = 'Comic2024!';
+document.getElementById('fillCredsBtn').addEventListener('click', () => {
+  const credentials = window.DEMO_CREDENTIALS;
+  if (!credentials) {
+    toast('Demo credentials are unavailable.', 'error');
+    return;
   }
+  document.getElementById('loginEmail').value = credentials.email;
+  document.getElementById('loginPassword').value = credentials.password;
+  toast('Credentials filled!', 'success');
 });
 
 function logout() {

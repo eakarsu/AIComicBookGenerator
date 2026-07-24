@@ -17,6 +17,13 @@ const PORT = process.env.PORT || 3001;
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map((value) => value.trim()).filter(Boolean);
 app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.includes(origin)) return callback(null, true); return callback(new Error('Origin not allowed')); }, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
+app.get('/runtime-config.js', (_req, res) => {
+  const enabled = process.env.NODE_ENV !== 'production'
+    && process.env.ENABLE_DEMO_CREDENTIAL_AUTOFILL !== 'false'
+    && process.env.DEMO_EMAIL && process.env.DEMO_PASSWORD;
+  const credentials = enabled ? { email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD } : null;
+  res.type('application/javascript').send(`window.DEMO_CREDENTIALS=${JSON.stringify(credentials)};`);
+});
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Routes
@@ -47,4 +54,3 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🎨 AI Comic Book Generator running on http://localhost:${PORT}`);
 });
-
