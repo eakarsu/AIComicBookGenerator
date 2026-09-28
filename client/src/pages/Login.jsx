@@ -24,7 +24,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [defaults, setDefaults] = useState(null);
 
   useEffect(() => {
     if (isLoggedIn) navigate('/');
@@ -34,7 +33,6 @@ export default function Login() {
     try {
       const res = await fetch('/api/auth/defaults');
       const data = await res.json();
-      setDefaults(data);
       setEmail(data.email);
       setPassword(data.password);
     } catch {}
@@ -101,13 +99,8 @@ export default function Login() {
         <div style={styles.hint}>
           Need credentials?{' '}
           <button style={styles.defaultsBtn} type="button" onClick={loadDefaults}>
-            Load default account
+            Auto Fill Demo Credentials
           </button>
-          {defaults && (
-            <div style={{ marginTop: '0.4rem' }}>
-              {defaults.email} / {defaults.password}
-            </div>
-          )}
         </div>
       </div>
     </div>
