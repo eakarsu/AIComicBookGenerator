@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App.jsx';
+import FullFieldPresets from '../components/FullFieldPresets';
+import AIReport from '../components/AIReport';
 
 const styles = {
   page: { maxWidth: '700px', margin: '0 auto', padding: '2rem 1.5rem' },
@@ -27,8 +29,26 @@ const styles = {
 const GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'Superhero', 'Cyberpunk', 'Post-Apocalyptic'];
 const TONES = ['Epic', 'Dark', 'Lighthearted', 'Gritty', 'Whimsical', 'Dramatic', 'Suspenseful'];
 
+const STORY_EXAMPLES = [
+  { label: 'City rescue', values: { storyPrompt: 'Nova, a rookie solar-powered hero, must evacuate a flooded city while discovering why its emergency beacons failed. Create three acts, vivid panels, and a hopeful cliffhanger.', genre: 'Superhero', tone: 'Epic' } },
+  { label: 'Moon mystery', values: { storyPrompt: 'A librarian on a moon colony investigates a missing star map with a repair robot. Plant fair clues, a surprising motive, and an unresolved final signal.', genre: 'Mystery', tone: 'Suspenseful' } },
+  { label: 'Forest quest', values: { storyPrompt: 'A young cartographer and a talking fox cross a moving forest to return a lost constellation. Include visual humor, a difficult choice, and a magical cliffhanger.', genre: 'Fantasy', tone: 'Whimsical' } },
+];
+const VILLAIN_EXAMPLES = [
+  { label: 'City rescue', values: { villainGenre: 'Superhero', heroCharacter: 'Nova is a rookie hero who stores sunlight, protects flood survivors, and fears abandoning anyone. Design an original antagonist with a contrasting goal and a visual weakness.' } },
+  { label: 'Moon mystery', values: { villainGenre: 'Mystery', heroCharacter: 'Mira is a moon-colony librarian who solves puzzles using forgotten maps and an honest repair robot. Create a layered adversary with a believable motive.' } },
+  { label: 'Forest quest', values: { villainGenre: 'Fantasy', heroCharacter: 'Ari is a young cartographer traveling with a talking fox to return a constellation. Create a magical rival with a sympathetic backstory and distinctive silhouette.' } },
+];
+const TWIST_EXAMPLES = [
+  { label: 'City rescue', values: { twistGenre: 'Superhero', storySoFar: 'Nova restores the flood beacons, but their signal points to a sealed reservoir. Her mentor has hidden the original engineering plans. Propose three twists grounded in these clues.' } },
+  { label: 'Moon mystery', values: { twistGenre: 'Mystery', storySoFar: 'Mira finds the missing map etched inside her repair robot. Its last repair predates the colony. Propose three fair but surprising explanations with setup clues.' } },
+  { label: 'Forest quest', values: { twistGenre: 'Fantasy', storySoFar: 'Ari reaches the constellation shrine, where the fox loses its voice and the forest stops moving. Propose three twists that reinterpret their journey without erasing Ari’s choices.' } },
+];
+
+
 export default function CreateStory() {
   const { token } = useAuth();
+  const pending = useRef(false);
   const navigate = useNavigate();
   const [tab, setTab] = useState('story');
 
@@ -52,14 +72,15 @@ export default function CreateStory() {
 
   async function generateStory(e) {
     e.preventDefault();
-    if (!storyPrompt.trim()) return;
+    if (pending.current || !token || generating || !storyPrompt.trim()) return;
+    pending.current = true;
     setGenerating(true);
     setError('');
     setResult(null);
     try {
       const res = await fetch('/api/ai/generate-story', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ prompt: storyPrompt, genre, tone }),
       });
       const data = await res.json();
@@ -68,19 +89,21 @@ export default function CreateStory() {
     } catch (err) {
       setError(err.message);
     }
+    pending.current = false;
     setGenerating(false);
   }
 
   async function generateVillain(e) {
     e.preventDefault();
-    if (!heroCharacter.trim()) return;
+    if (pending.current || !token || generating || !heroCharacter.trim()) return;
+    pending.current = true;
     setGenerating(true);
     setError('');
     setVillainResult(null);
     try {
       const res = await fetch('/api/ai/generate-villain', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ story_genre: villainGenre, hero_character: heroCharacter }),
       });
       const data = await res.json();
@@ -89,19 +112,21 @@ export default function CreateStory() {
     } catch (err) {
       setError(err.message);
     }
+    pending.current = false;
     setGenerating(false);
   }
 
   async function generateTwists(e) {
     e.preventDefault();
-    if (!storySoFar.trim()) return;
+    if (pending.current || !token || generating || !storySoFar.trim()) return;
+    pending.current = true;
     setGenerating(true);
     setError('');
     setTwistResult(null);
     try {
       const res = await fetch('/api/ai/plot-twist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ story_so_far: storySoFar, genre: twistGenre }),
       });
       const data = await res.json();
@@ -110,6 +135,7 @@ export default function CreateStory() {
     } catch (err) {
       setError(err.message);
     }
+    pending.current = false;
     setGenerating(false);
   }
 
@@ -134,6 +160,7 @@ export default function CreateStory() {
 
       {tab === 'story' && (
         <form style={styles.form} onSubmit={generateStory}>
+          <FullFieldPresets value={{storyPrompt,genre,tone}} onChange={v=>{setStoryPrompt(v.storyPrompt);setGenre(v.genre);setTone(v.tone);}} presets={STORY_EXAMPLES} disabled={generating || !token} />
           <div>
             <label style={styles.label}>Story Prompt *</label>
             <textarea
@@ -158,7 +185,7 @@ export default function CreateStory() {
               </select>
             </div>
           </div>
-          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating}>
+          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating || !token}>
             {generating ? 'Generating...' : 'Generate Story'}
           </button>
         </form>
@@ -166,6 +193,7 @@ export default function CreateStory() {
 
       {tab === 'villain' && (
         <form style={styles.form} onSubmit={generateVillain}>
+          <FullFieldPresets value={{heroCharacter,villainGenre}} onChange={v=>{setHeroCharacter(v.heroCharacter);setVillainGenre(v.villainGenre);}} presets={VILLAIN_EXAMPLES} disabled={generating || !token} />
           <div>
             <label style={styles.label}>Hero Character *</label>
             <input
@@ -182,7 +210,7 @@ export default function CreateStory() {
               {GENRES.map(g => <option key={g}>{g}</option>)}
             </select>
           </div>
-          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating}>
+          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating || !token}>
             {generating ? 'Generating...' : 'Generate Villain'}
           </button>
         </form>
@@ -190,6 +218,7 @@ export default function CreateStory() {
 
       {tab === 'twist' && (
         <form style={styles.form} onSubmit={generateTwists}>
+          <FullFieldPresets value={{storySoFar,twistGenre}} onChange={v=>{setStorySoFar(v.storySoFar);setTwistGenre(v.twistGenre);}} presets={TWIST_EXAMPLES} disabled={generating || !token} />
           <div>
             <label style={styles.label}>Story So Far *</label>
             <textarea
@@ -206,7 +235,7 @@ export default function CreateStory() {
               {GENRES.map(g => <option key={g}>{g}</option>)}
             </select>
           </div>
-          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating}>
+          <button type="submit" style={{ ...styles.btn, ...(generating ? styles.btnDisabled : {}) }} disabled={generating || !token}>
             {generating ? 'Generating...' : 'Generate 3 Plot Twists'}
           </button>
         </form>
@@ -215,7 +244,7 @@ export default function CreateStory() {
       {result && tab === 'story' && (
         <div style={styles.result}>
           <div style={styles.resultTitle}>Generated Story</div>
-          <div style={styles.resultText}>{result.generated_story}</div>
+          <AIReport response={result.generated_story} title="Generated story" model={result.model_used} />
           <button style={styles.viewBtn} onClick={() => navigate('/')}>
             View All Stories
           </button>
@@ -225,14 +254,14 @@ export default function CreateStory() {
       {villainResult && tab === 'villain' && (
         <div style={styles.result}>
           <div style={styles.resultTitle}>Villain: {villainResult.villain_name}</div>
-          <div style={styles.resultText}>{villainResult.generated_profile}</div>
+          <AIReport response={villainResult.generated_profile} title="Villain profile" model={villainResult.model_used} />
         </div>
       )}
 
       {twistResult && tab === 'twist' && (
         <div style={styles.result}>
           <div style={styles.resultTitle}>Plot Twist Options</div>
-          <div style={styles.resultText}>{twistResult.generated_twist}</div>
+          <AIReport response={twistResult.generated_twist} title="Plot twist options" model={twistResult.model_used} />
         </div>
       )}
     </div>

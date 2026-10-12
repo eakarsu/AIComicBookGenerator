@@ -12,14 +12,52 @@ const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241
 
 router.use(authenticate);
 
-async function callOpenRouter(prompt, systemPrompt) {
+// Resolve optional source-story references before a provider call. The selected
+// story is read from the configured database and is never replaced by preset
+// prose supplied by the browser.
+router.use(async (req, res, next) => {
+  if (req.method !== 'POST' || !req.body?.source_story_id) return next();
+  const sourceStoryId = Number(req.body.source_story_id);
+  if (!Number.isInteger(sourceStoryId) || sourceStoryId < 1) {
+    return res.status(400).json({ error: 'source_story_id must be a positive integer.' });
+  }
+  try {
+    const result = await pool.query(
+      'SELECT id, title, genre, synopsis FROM comic_stories WHERE id = $1',
+      [sourceStoryId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Source story not found.' });
+    req.sourceStory = result.rows[0];
+    return next();
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Abort the upstream provider request when the browser cancels or disconnects.
+router.use((req, res, next) => {
+  const controller = new AbortController();
+  req.openRouterSignal = controller.signal;
+  req.once('aborted', () => controller.abort());
+  res.once('close', () => {
+    if (!res.writableEnded) controller.abort();
+  });
+  next();
+});
+
+async function callOpenRouter(prompt, systemPrompt, signal, sourceStory) {
   if (!process.env.OPENROUTER_API_KEY) {
     const err = new Error('AI service unavailable: OPENROUTER_API_KEY not configured on server.');
     err.statusCode = 503;
     throw err;
   }
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const baseUrl = (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
+  const groundedPrompt = sourceStory
+    ? `AUTHENTIC SOURCE STORY (preserve its facts; do not invent changes to the source):\nID: ${sourceStory.id}\nTitle: ${sourceStory.title}\nGenre: ${sourceStory.genre || 'Unspecified'}\nSynopsis: ${sourceStory.synopsis || 'No synopsis recorded'}\n\nUSER REQUEST:\n${prompt}`
+    : prompt;
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
+    signal,
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
@@ -30,15 +68,25 @@ async function callOpenRouter(prompt, systemPrompt) {
       model: MODEL,
       messages: [
         { role: 'system', content: systemPrompt || SYSTEM_PROMPT },
-        { role: 'user', content: prompt }
+        { role: 'user', content: groundedPrompt }
       ],
       max_tokens: 1500,
       temperature: 0.8
     })
   });
-  const data = await response.json();
-  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-  return data.choices[0].message.content;
+  const data = await response.json().catch(() => null);
+  if (!response.ok || data?.error) {
+    const error = new Error(data?.error?.message || `OpenRouter request failed (${response.status}).`);
+    error.statusCode = response.status === 429 ? 429 : 502;
+    throw error;
+  }
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string' || !content.trim()) {
+    const error = new Error('OpenRouter returned an empty response. Try again.');
+    error.statusCode = 502;
+    throw error;
+  }
+  return content;
 }
 
 // ─── Input validation helper ──────────────────────────────────────────────────
@@ -50,6 +98,14 @@ function validate(body, required) {
   return missing;
 }
 
+function sendAiError(res, error) {
+  if (res.headersSent || res.destroyed) return;
+  const cancelled = error.name === 'AbortError';
+  res.status(cancelled ? 499 : error.statusCode || 500).json({
+    error: cancelled ? 'OpenRouter request cancelled.' : error.message,
+  });
+}
+
 // ─── POST /api/ai/generate-story ──────────────────────────────────────────────
 router.post('/generate-story', aiRateLimiter, async (req, res) => {
   try {
@@ -58,14 +114,14 @@ router.post('/generate-story', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a master comic book story writer. Create vivid, engaging comic book stories. Format your response as a structured story with: Title, Setting, Characters (with brief descriptions), Plot (broken into 3 acts), Key Scenes (describe 4-5 key visual panels), and a Cliffhanger ending. Make it dramatic and visual. Genre: ${genre || 'Any'}. Tone: ${tone || 'Epic'}.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const result = await pool.query(
       `INSERT INTO ai_stories (prompt, generated_story, genre, tone, word_count, model_used, rating) VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING *`,
       [prompt, generated, genre || 'General', tone || 'Epic', generated.split(/\s+/).length, MODEL]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -77,7 +133,7 @@ router.post('/generate-character', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a comic book character designer. Create a detailed character profile including: Name, Alias/Title, Appearance (detailed visual description for an artist), Powers/Abilities (list 3-5), Weakness, Personality Traits, Origin Story (brief), Signature Move, and Catchphrase. Style: ${style || 'Superhero'}. Archetype: ${archetype || 'Hero'}. Make the character visually striking and memorable.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const nameMatch = generated.match(/(?:Name|name)[:\s]+([^\n]+)/);
     const charName = nameMatch ? nameMatch[1].trim().replace(/\*+/g, '') : 'Unnamed Hero';
     const result = await pool.query(
@@ -86,7 +142,7 @@ router.post('/generate-character', aiRateLimiter, async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -98,14 +154,14 @@ router.post('/generate-dialogue', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a comic book dialogue writer. Write dynamic, punchy dialogue for comic book panels. Format as a scene with: Scene Setup (1-2 sentences), then a series of dialogue lines with character name, their dialogue in quotes, and a stage direction/emotion in parentheses. Include sound effects (BOOM, CRACK, etc.) where appropriate. Keep dialogue concise and impactful—comic bubbles are small! Characters: ${characters_involved || 'Hero and Villain'}. Emotion: ${emotion || 'Dramatic'}.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const result = await pool.query(
       `INSERT INTO ai_dialogues (prompt, scene_context, generated_dialogue, characters_involved, emotion, model_used, rating) VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING *`,
       [prompt, scene_context || '', generated, characters_involved || 'Various', emotion || 'Dramatic', MODEL]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -117,14 +173,14 @@ router.post('/generate-art-suggestion', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a comic book art director. Suggest the perfect art style for a comic project. Include: Recommended Style Name, Style Description, Key Techniques (list 4-5 specific techniques), Color Palette (describe specific colors), Reference Artists (2-3 real comic artists for inspiration), Panel Layout Recommendations, Inking Approach, and Overall Mood. Color mood preference: ${color_mood || 'Vibrant'}. Style category: ${style_type || 'Modern'}.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const result = await pool.query(
       `INSERT INTO ai_art_suggestions (prompt, generated_suggestion, style_type, reference_artists, color_mood, model_used, rating) VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING *`,
       [prompt, generated, style_type || 'Modern', '', color_mood || 'Vibrant', MODEL]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -136,14 +192,14 @@ router.post('/generate-scene', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a comic book scene visualizer. Create a vivid, detailed scene description that an artist could draw. Include: Overall Composition (camera angle and framing), Background Details (5+ specific elements), Lighting Description (source, quality, shadows), Color Palette (dominant colors and accents), Atmosphere (particles, weather, effects), Character Positions (if applicable), Sound Effects (ambient sounds as comic text), and Emotional Tone. Setting: ${setting || 'Any'}. Time: ${time_of_day || 'Any'}. Weather: ${weather || 'Clear'}. Mood: ${mood || 'Dramatic'}.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const result = await pool.query(
       `INSERT INTO ai_scenes (prompt, generated_scene, setting, time_of_day, weather, mood, model_used, rating) VALUES ($1, $2, $3, $4, $5, $6, $7, 0) RETURNING *`,
       [prompt, generated, setting || 'Various', time_of_day || 'Any', weather || 'Clear', mood || 'Dramatic', MODEL]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -174,7 +230,7 @@ router.post('/generate-villain', aiRateLimiter, async (req, res) => {
 
 Story Genre: ${story_genre || 'Superhero'}. Hero: ${hero_character || 'Unknown'}.`;
 
-    const generated = await callOpenRouter(effectivePrompt, sysPrompt);
+    const generated = await callOpenRouter(effectivePrompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const nameMatch = generated.match(/(?:Villain Name|Name|name|Villain)[:\s*]+([^\n]+)/);
     const villainName = nameMatch ? nameMatch[1].trim().replace(/\*+/g, '') : 'Unknown Villain';
 
@@ -185,7 +241,7 @@ Story Genre: ${story_genre || 'Superhero'}. Hero: ${hero_character || 'Unknown'}
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -213,7 +269,7 @@ router.post('/plot-twist', aiRateLimiter, async (req, res) => {
 
 Genre: ${genre || 'Superhero'}. Make each option tonally distinct (e.g., one dark, one hopeful, one unexpected).`;
 
-    const generated = await callOpenRouter(effectivePrompt, sysPrompt);
+    const generated = await callOpenRouter(effectivePrompt, sysPrompt, req.openRouterSignal, req.sourceStory);
 
     const result = await pool.query(
       `INSERT INTO ai_plot_twists (prompt, story_context, generated_twist, twist_type, intensity, model_used, rating)
@@ -222,7 +278,7 @@ Genre: ${genre || 'Superhero'}. Make each option tonally distinct (e.g., one dar
     );
     res.json({ ...result.rows[0], twists: generated });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -234,14 +290,14 @@ router.post('/generate-plot-twist', aiRateLimiter, async (req, res) => {
     if (missing.length) return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
 
     const sysPrompt = `You are a master comic book plot architect. Generate a mind-blowing plot twist. Include: The Twist (dramatic reveal), Setup (how to foreshadow it - list 3 clues), Impact (how it changes the story), Character Reactions (how 2-3 characters respond), Visual Reveal (describe the perfect panel to reveal this twist), and Aftermath (what happens next). Twist type: ${twist_type || 'Revelation'}. Intensity: ${intensity || 'High'}. Make it shocking but logical in hindsight.`;
-    const generated = await callOpenRouter(prompt, sysPrompt);
+    const generated = await callOpenRouter(prompt, sysPrompt, req.openRouterSignal, req.sourceStory);
     const result = await pool.query(
       `INSERT INTO ai_plot_twists (prompt, story_context, generated_twist, twist_type, intensity, model_used, rating) VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING *`,
       [prompt, story_context || '', generated, twist_type || 'Revelation', intensity || 'High', MODEL]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -292,7 +348,7 @@ Provide:
 Make the description specific enough that an artist could draw it without additional reference.
     `.trim();
 
-    const generated = await callOpenRouter(prompt, SYSTEM_PROMPT);
+    const generated = await callOpenRouter(prompt, SYSTEM_PROMPT, req.openRouterSignal, req.sourceStory);
 
     // Save to panels table
     const panelResult = await pool.query(
@@ -307,7 +363,7 @@ Make the description specific enough that an artist could draw it without additi
       generated_description: generated,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -326,7 +382,7 @@ router.post('/translate-story', aiRateLimiter, async (req, res) => {
 - panel and scene breaks${preserve_panel_breaks === false ? ' (you may merge if it improves flow)' : ' exactly as in the source'}
 - the original tone${tone ? ` (target tone: ${tone})` : ''}
 Return: 1) **Translated Story** in ${target_language}, 2) **Translator Notes** flagging any cultural adaptations, idiom choices, or untranslatable wordplay.`;
-    const generated = await callOpenRouter(story_text, sysPrompt);
+    const generated = await callOpenRouter(story_text, sysPrompt, req.openRouterSignal, req.sourceStory);
     res.json({
       target_language,
       tone: tone || 'Source',
@@ -335,7 +391,7 @@ Return: 1) **Translated Story** in ${target_language}, 2) **Translator Notes** f
       created_at: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 
@@ -355,7 +411,7 @@ router.post('/generate-narration', aiRateLimiter, async (req, res) => {
 4. **Sound Effect Cues** — ${include_sound_effects === false ? 'omit unless essential' : 'placed inline as [SFX: …]'}
 5. **Estimated Runtime** — at the end (assume ~150 words/min)
 Voice style: ${voice_style || 'Cinematic narrator'}. Pacing: ${pacing || 'Moderate'}.`;
-    const generated = await callOpenRouter(story_text, sysPrompt);
+    const generated = await callOpenRouter(story_text, sysPrompt, req.openRouterSignal, req.sourceStory);
     res.json({
       voice_style: voice_style || 'Cinematic narrator',
       pacing: pacing || 'Moderate',
@@ -364,7 +420,7 @@ Voice style: ${voice_style || 'Cinematic narrator'}. Pacing: ${pacing || 'Modera
       created_at: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ error: err.message });
+    sendAiError(res, err);
   }
 });
 

@@ -1,3 +1,4 @@
+import { useRef as useDemoLoginRef, useState as useDemoLoginState } from 'react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App.jsx';
@@ -18,6 +19,9 @@ const styles = {
 };
 
 export default function Login() {
+  const demoLoginLock = useDemoLoginRef(false);
+  const [demoLoginBusy, setDemoLoginBusy] = useDemoLoginState(false);
+
   const { login, isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -33,12 +37,13 @@ export default function Login() {
     try {
       const res = await fetch('/api/auth/defaults');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Demo credentials are unavailable');
       setEmail(data.email);
       setPassword(data.password);
     } catch {}
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e, demoLoginCredentials) {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -46,7 +51,7 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: (demoLoginCredentials?.email ?? email), password: (demoLoginCredentials?.password ?? password) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
@@ -98,8 +103,26 @@ export default function Login() {
 
         <div style={styles.hint}>
           Need credentials?{' '}
-          <button style={styles.defaultsBtn} type="button" onClick={loadDefaults}>
-            Auto Fill Demo Credentials
+          <button disabled={demoLoginBusy} style={styles.defaultsBtn} type="button" onClick={async (event) => {
+ if (demoLoginLock.current) return;
+ demoLoginLock.current = true; setDemoLoginBusy(true);
+ const values = {};
+ const captureDemoValue = (key, value) => { values[key] = value; return value; };
+ try {
+  await (async () => {
+    try {
+      const res = await fetch('/api/auth/defaults');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Demo credentials are unavailable');
+      setEmail(captureDemoValue("email", data.email));
+      setPassword(captureDemoValue("password", data.password));
+    } catch (error) {captureDemoValue('error', error.message || 'Demo credentials are unavailable');}
+  })(event);
+  if (values.error || typeof values.email !== 'string' || !values.email || typeof values.password !== 'string' || !values.password) { setError(typeof values.error === 'string' ? values.error : 'Demo credentials are unavailable.'); return; }
+  await handleSubmit(event, { email: values.email, password: values.password });
+ } finally { demoLoginLock.current = false; setDemoLoginBusy(false); }
+}}>
+            Log In as Demo
           </button>
         </div>
       </div>

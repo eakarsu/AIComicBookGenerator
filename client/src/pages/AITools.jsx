@@ -1,3 +1,4 @@
+import NativeAIControls from "../components/NativeAIControls.jsx";
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../App.jsx';
 
@@ -270,7 +271,7 @@ export default function AITools() {
   }
 
   return (
-    <div style={styles.page}>
+    <NativeAIControls busy={busy} context="ComicBookGenerator"><div style={styles.page}>
       <h1 style={styles.title}>AI Tools</h1>
       <p style={styles.subtitle}>Characters, dialogue, art direction, scenes, and panel art notes.</p>
 
@@ -307,7 +308,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genCharacter}>
           <div>
             <label style={styles.label}>Character Concept *</label>
-            <textarea
+            <textarea data-ai-field={"charPrompt"}
               style={styles.textarea}
               placeholder="Describe the character you want to design..."
               value={charPrompt}
@@ -318,13 +319,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Style</label>
-              <select style={styles.select} value={charStyle} onChange={e => setCharStyle(e.target.value)}>
+              <select data-ai-field={"charStyle"} style={styles.select} value={charStyle} onChange={e => setCharStyle(e.target.value)}>
                 {CHARACTER_STYLES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Archetype</label>
-              <select style={styles.select} value={charArchetype} onChange={e => setCharArchetype(e.target.value)}>
+              <select data-ai-field={"charArchetype"} style={styles.select} value={charArchetype} onChange={e => setCharArchetype(e.target.value)}>
                 {ARCHETYPES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -345,7 +346,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genDialogue}>
           <div>
             <label style={styles.label}>Scene / Beat *</label>
-            <textarea
+            <textarea data-ai-field={"dlgPrompt"}
               style={styles.textarea}
               placeholder="Describe what's happening in the scene..."
               value={dlgPrompt}
@@ -355,7 +356,7 @@ export default function AITools() {
           </div>
           <div>
             <label style={styles.label}>Scene Context (optional)</label>
-            <input
+            <input data-ai-field={"dlgContext"}
               style={styles.input}
               placeholder="e.g., Rooftop confrontation after a heist"
               value={dlgContext}
@@ -365,7 +366,7 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Characters</label>
-              <input
+              <input data-ai-field={"dlgChars"}
                 style={styles.input}
                 placeholder="e.g., Hero, Villain, Sidekick"
                 value={dlgChars}
@@ -374,7 +375,7 @@ export default function AITools() {
             </div>
             <div>
               <label style={styles.label}>Emotion</label>
-              <select style={styles.select} value={dlgEmotion} onChange={e => setDlgEmotion(e.target.value)}>
+              <select data-ai-field={"dlgEmotion"} style={styles.select} value={dlgEmotion} onChange={e => setDlgEmotion(e.target.value)}>
                 {EMOTIONS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -392,7 +393,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genArtSuggestion}>
           <div>
             <label style={styles.label}>Project Description *</label>
-            <textarea
+            <textarea data-ai-field={"artPrompt"}
               style={styles.textarea}
               placeholder="Describe the comic project for an art-style recommendation..."
               value={artPrompt}
@@ -403,13 +404,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Style Category</label>
-              <select style={styles.select} value={artStyleType} onChange={e => setArtStyleType(e.target.value)}>
+              <select data-ai-field={"artStyleType"} style={styles.select} value={artStyleType} onChange={e => setArtStyleType(e.target.value)}>
                 {ART_STYLES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Color Mood</label>
-              <select style={styles.select} value={artColorMood} onChange={e => setArtColorMood(e.target.value)}>
+              <select data-ai-field={"artColorMood"} style={styles.select} value={artColorMood} onChange={e => setArtColorMood(e.target.value)}>
                 {COLOR_MOODS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -427,7 +428,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genScene}>
           <div>
             <label style={styles.label}>Scene Brief *</label>
-            <textarea
+            <textarea data-ai-field={"scenePrompt"}
               style={styles.textarea}
               placeholder="Describe the scene (what's happening, who's there)..."
               value={scenePrompt}
@@ -438,13 +439,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Setting</label>
-              <select style={styles.select} value={sceneSetting} onChange={e => setSceneSetting(e.target.value)}>
+              <select data-ai-field={"sceneSetting"} style={styles.select} value={sceneSetting} onChange={e => setSceneSetting(e.target.value)}>
                 {SETTINGS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Time of Day</label>
-              <select style={styles.select} value={sceneTime} onChange={e => setSceneTime(e.target.value)}>
+              <select data-ai-field={"sceneTime"} style={styles.select} value={sceneTime} onChange={e => setSceneTime(e.target.value)}>
                 {TIMES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -452,13 +453,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Weather</label>
-              <select style={styles.select} value={sceneWeather} onChange={e => setSceneWeather(e.target.value)}>
+              <select data-ai-field={"sceneWeather"} style={styles.select} value={sceneWeather} onChange={e => setSceneWeather(e.target.value)}>
                 {WEATHER.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Mood</label>
-              <select style={styles.select} value={sceneMood} onChange={e => setSceneMood(e.target.value)}>
+              <select data-ai-field={"sceneMood"} style={styles.select} value={sceneMood} onChange={e => setSceneMood(e.target.value)}>
                 {MOODS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -476,7 +477,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genPanel}>
           <div>
             <label style={styles.label}>Story *</label>
-            <select
+            <select data-ai-field={"panelStoryId"}
               style={styles.select}
               value={panelStoryId}
               onChange={e => setPanelStoryId(e.target.value)}
@@ -491,7 +492,7 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Panel Number *</label>
-              <input
+              <input data-ai-field={"panelNumber"}
                 type="number"
                 min="1"
                 style={styles.input}
@@ -502,14 +503,14 @@ export default function AITools() {
             </div>
             <div>
               <label style={styles.label}>Layout</label>
-              <select style={styles.select} value={panelLayout} onChange={e => setPanelLayout(e.target.value)}>
+              <select data-ai-field={"panelLayout"} style={styles.select} value={panelLayout} onChange={e => setPanelLayout(e.target.value)}>
                 {LAYOUTS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
           </div>
           <div>
             <label style={styles.label}>Scene Description *</label>
-            <textarea
+            <textarea data-ai-field={"panelScene"}
               style={styles.textarea}
               placeholder="What does this panel show?"
               value={panelScene}
@@ -519,7 +520,7 @@ export default function AITools() {
           </div>
           <div>
             <label style={styles.label}>Dialogue (optional)</label>
-            <input
+            <input data-ai-field={"panelDialogue"}
               style={styles.input}
               placeholder='e.g., "We had one job!"'
               value={panelDialogue}
@@ -528,7 +529,7 @@ export default function AITools() {
           </div>
           <div>
             <label style={styles.label}>Mood</label>
-            <select style={styles.select} value={panelMood} onChange={e => setPanelMood(e.target.value)}>
+            <select data-ai-field={"panelMood"} style={styles.select} value={panelMood} onChange={e => setPanelMood(e.target.value)}>
               {MOODS.concat(['Dynamic']).filter((v, i, a) => a.indexOf(v) === i).map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
@@ -548,7 +549,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genTranslate}>
           <div>
             <label style={styles.label}>Story Text *</label>
-            <textarea
+            <textarea data-ai-field={"trStory"}
               style={styles.textarea}
               placeholder="Paste the comic story or script you want translated..."
               value={trStory}
@@ -559,13 +560,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Target Language *</label>
-              <select style={styles.select} value={trLang} onChange={e => setTrLang(e.target.value)}>
+              <select data-ai-field={"trLang"} style={styles.select} value={trLang} onChange={e => setTrLang(e.target.value)}>
                 {LANGUAGES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Tone Override (optional)</label>
-              <input
+              <input data-ai-field={"trTone"}
                 style={styles.input}
                 placeholder="e.g., More formal, Slangy"
                 value={trTone}
@@ -589,7 +590,7 @@ export default function AITools() {
         <form style={styles.form} onSubmit={genNarration}>
           <div>
             <label style={styles.label}>Story Text *</label>
-            <textarea
+            <textarea data-ai-field={"narStory"}
               style={styles.textarea}
               placeholder="Paste the comic story to be adapted into narration..."
               value={narStory}
@@ -600,13 +601,13 @@ export default function AITools() {
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Voice Style</label>
-              <select style={styles.select} value={narVoice} onChange={e => setNarVoice(e.target.value)}>
+              <select data-ai-field={"narVoice"} style={styles.select} value={narVoice} onChange={e => setNarVoice(e.target.value)}>
                 {VOICE_STYLES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Pacing</label>
-              <select style={styles.select} value={narPacing} onChange={e => setNarPacing(e.target.value)}>
+              <select data-ai-field={"narPacing"} style={styles.select} value={narPacing} onChange={e => setNarPacing(e.target.value)}>
                 {PACINGS.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -628,6 +629,6 @@ export default function AITools() {
           )}
         </form>
       )}
-    </div>
+    </div></NativeAIControls>
   );
 }

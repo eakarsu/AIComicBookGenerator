@@ -1,6 +1,9 @@
 const express = require('express');
 const pool = require('../db');
+const authenticate = require('../middleware/authenticate');
 const router = express.Router();
+
+router.use(authenticate);
 
 // Generic CRUD factory
 // Note: comic-stories and characters have dedicated routes with pagination in /routes/stories.js

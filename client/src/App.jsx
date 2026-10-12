@@ -1,3 +1,4 @@
+import AIReportLibrary from "./components/AIReportLibrary";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import Home from './pages/Home.jsx';
@@ -135,7 +136,7 @@ function NavBar() {
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AuthProvider>
+    <><AIReportLibrary floating /><AuthProvider>
       <BrowserRouter>
         <NavBar />
         <Routes>
@@ -158,6 +159,6 @@ export default function App() {
           <Route path="/panel-continuity" element={<PanelContinuityPage />} />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    </AuthProvider></>
   );
 }
