@@ -57,6 +57,7 @@ app.use('/api/webtoon-white-label', require('./routes/webtoonStudioWhiteLabel'))
 
 // Advisory AI reports only; native execution and approval routes stay unchanged.
 const aiWorkspaceSupport = require('./aiWorkspaceAdapters.cjs');
+app.use('/api/wave30c', require('./routes/wave30cRoutes'));
 app.use('/api/report-workspace', require('./aiWorkspace.cjs').createAIWorkspaceRouter({
   pool,
   authenticateToken: require('./middleware/auth.js'),

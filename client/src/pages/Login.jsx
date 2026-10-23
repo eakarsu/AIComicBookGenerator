@@ -28,10 +28,23 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const demoEmail = import.meta.env.VITE_DEMO_EMAIL;
+  const demoPassword = import.meta.env.VITE_DEMO_PASSWORD;
+  const demoConfigured = Boolean(demoEmail && demoPassword);
 
   useEffect(() => {
     if (isLoggedIn) navigate('/');
   }, [isLoggedIn]);
+
+  async function handleFillDemoCredentials() {
+    if (demoConfigured) { setEmail(demoEmail); setPassword(demoPassword); setError(''); return; }
+    try {
+      const res = await fetch('/api/auth/demo-credentials', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.email && data.password) { setEmail(data.email); setPassword(data.password); setError(''); return; }
+    } catch {}
+    setError('Demo credentials are not configured for this environment.');
+  }
 
   async function loadDefaults() {
     try {
@@ -98,6 +111,9 @@ export default function Login() {
           </div>
           <button type="submit" style={{ ...styles.btn, ...(loading ? styles.btnDisabled : {}) }} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+          <button type="button" aria-label="Fill demo credentials" disabled={loading} onClick={handleFillDemoCredentials} style={{ background: 'transparent', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '8px', padding: '0.8rem', cursor: 'pointer', fontWeight: 600, width: '100%' }}>
+            Fill demo credentials
           </button>
         </form>
 

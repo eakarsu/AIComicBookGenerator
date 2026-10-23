@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const styles = {
   page: { maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' },
@@ -93,7 +93,9 @@ function StarRating({ rating }) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const [stories, setStories] = useState([]);
+  const [selectedStory, setSelectedStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [genre, setGenre] = useState('');
@@ -169,10 +171,10 @@ export default function Home() {
       ) : (
         <div style={styles.grid}>
           {stories.map(story => (
-            <Link
+            <div
               key={story.id}
-              to={`/stories/${story.id}`}
-              style={styles.card}
+              onClick={() => setSelectedStory(story)}
+              style={{ ...styles.card, cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#6366f1'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = '#2d3748'; }}
             >
@@ -198,8 +200,29 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </Link>
+            </div>
           ))}
+        </div>
+      )}
+
+      {selectedStory && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setSelectedStory(null)}>
+          <div role="dialog" aria-modal="true" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 14, padding: 24, width: '90%', maxWidth: 620, maxHeight: '88vh', overflowY: 'auto', color: '#e2e8f0' }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0, marginBottom: 12 }}>{selectedStory.title}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              {Object.entries(selectedStory).filter(([k]) => !['id', 'cover_color'].includes(k)).map(([k, v]) => (
+                <div key={k} style={k === 'synopsis' ? { gridColumn: '1 / -1' } : {}}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase' }}>{k.replace(/_/g, ' ')}</div>
+                  <div style={{ fontSize: 14 }}>{String(v ?? '—')}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button style={{ ...styles.pageBtn, ...styles.pageBtnActive }} onClick={() => { const id = selectedStory.id; setSelectedStory(null); navigate(`/stories/${id}`); }}>Edit</button>
+              <button style={{ ...styles.pageBtn, background: '#dc2626', borderColor: '#dc2626' }} onClick={async () => { if (!window.confirm('Delete this story?')) return; setStories(prev => prev.filter(s => s.id !== selectedStory.id)); setSelectedStory(null); }}>Delete</button>
+              <button style={styles.pageBtn} onClick={() => setSelectedStory(null)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 

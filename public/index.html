@@ -151,7 +151,7 @@
 
     <!-- Detail Panel -->
     <div class="panel-overlay" id="panelOverlay" onclick="closeDetail()"></div>
-    <div class="detail-panel" id="detailPanel">
+    <div class="detail-panel" id="detailPanel" role="dialog" aria-modal="true">
         <div class="detail-panel-header">
             <h3 id="detailTitle">Details</h3>
             <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
@@ -177,5 +177,6 @@
 
     <script src="/runtime-config.js"></script>
     <script src="/js/app.js"></script>
+<script src="../feature-pack/feature-pack.js" defer></script>
 </body>
 </html>
